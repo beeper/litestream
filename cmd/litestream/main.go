@@ -92,19 +92,19 @@ func (m *Main) Run(ctx context.Context, args []string) (err error) {
 
 		// Wait for signal to stop program.
 		select {
-		case err = <-c.execCh:
+		case err = <-c.runCh:
 			fmt.Println("subprocess exited, litestream shutting down")
 		case sig := <-signalCh:
 			fmt.Println("signal received, litestream shutting down")
 
-			if c.cmd != nil {
+			if c.runSignal != nil {
 				fmt.Println("sending signal to exec process")
-				if err := c.cmd.Process.Signal(sig); err != nil {
+				if err := c.runSignal(sig); err != nil {
 					return fmt.Errorf("cannot signal exec process: %w", err)
 				}
 
 				fmt.Println("waiting for exec process to close")
-				if err := <-c.execCh; err != nil && !strings.HasPrefix(err.Error(), "signal:") {
+				if err := <-c.runCh; err != nil && !strings.HasPrefix(err.Error(), "signal:") {
 					return fmt.Errorf("cannot wait for exec process: %w", err)
 				}
 			}
