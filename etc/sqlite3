@@ -1,0 +1,2 @@
+#!/bin/sh
+exec /usr/bin/sqlite3 -cmd "PRAGMA foreign_keys=ON; PRAGMA journal_mode=WAL; PRAGMA wal_autocheckpoint=0; PRAGMA busy_timeout=5000;" "$@"

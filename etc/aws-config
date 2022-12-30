@@ -1,0 +1,2 @@
+[default]
+credential_process = /usr/local/bin/aws-k8s-sa-provider

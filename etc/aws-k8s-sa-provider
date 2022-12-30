@@ -1,0 +1,13 @@
+#!/bin/sh
+DATEFMT=%Y-%m-%dT%H:%M:%SZ
+[ -z "$SERVICE_ACCOUNT_TOKEN" ] && exit 1
+[ -f "$SERVICE_ACCOUNT_TOKEN" ] || exit 1
+cat << EOF
+{
+    "Version": 1,
+    "AccessKeyId": "aws-k8s-sa-provider@$(date +$DATEFMT)",
+    "SecretAccessKey": "n/a",
+    "SessionToken": "$(cat $SERVICE_ACCOUNT_TOKEN)",
+    "Expiration": "$(date -ud @$(($(date -u +%s) + 300)) +$DATEFMT)"
+}
+EOF
