@@ -45,4 +45,7 @@ type ReplicaClient interface {
 	// index/offset within a generation. Returns an os.ErrNotFound error if the
 	// WAL segment does not exist.
 	WALSegmentReader(ctx context.Context, pos Pos) (io.ReadCloser, error)
+
+	// Deletes everything recursively from replica.
+	DeleteAll(ctx context.Context) error
 }

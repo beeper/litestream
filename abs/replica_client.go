@@ -2,6 +2,7 @@ package abs
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"net/url"
@@ -340,6 +341,11 @@ func (c *ReplicaClient) DeleteWALSegments(ctx context.Context, a []litestream.Po
 	}
 
 	return nil
+}
+
+// DeleteAll deletes everything on the remote path.
+func (c *ReplicaClient) DeleteAll(ctx context.Context) (err error) {
+	return errors.New("DeleteAll stub")
 }
 
 type snapshotIterator struct {

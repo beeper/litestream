@@ -124,6 +124,8 @@ func (m *Main) Run(ctx context.Context, args []string) (err error) {
 
 	case "restore":
 		return (&RestoreCommand{}).Run(ctx, args)
+	case "delete":
+		return (&DeleteCommand{}).Run(ctx, args)
 	case "snapshots":
 		return (&SnapshotsCommand{}).Run(ctx, args)
 	case "version":
@@ -154,6 +156,7 @@ The commands are:
 	generations  list available generations for a database
 	replicate    runs a server to replicate databases
 	restore      recovers database backup from a replica
+	delete       removes everything from a replica
 	snapshots    list available snapshots for a database
 	version      prints the binary version
 	wal          list available WAL files for a database

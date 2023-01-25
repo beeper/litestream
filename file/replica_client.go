@@ -379,3 +379,15 @@ func (c *ReplicaClient) DeleteWALSegments(ctx context.Context, a []litestream.Po
 	}
 	return nil
 }
+
+// DeleteAll deletes everything on the remote path.
+func (c *ReplicaClient) DeleteAll(ctx context.Context) error {
+	if c.Path() == "" || c.Path() == "/" {
+		return fmt.Errorf("refusing to delete root directory")
+	}
+
+	if err := os.RemoveAll(c.path); err != nil && !os.IsNotExist(err) {
+		return err
+	}
+	return nil
+}

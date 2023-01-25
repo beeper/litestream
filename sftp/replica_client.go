@@ -493,3 +493,8 @@ func (c *ReplicaClient) resetOnConnError(err error) {
 		c.sshClient = nil
 	}
 }
+
+// Deletes everything recursively from replica.
+func (c *ReplicaClient) DeleteAll(ctx context.Context) (err error) {
+	return errors.New("DeleteAll stub")
+}

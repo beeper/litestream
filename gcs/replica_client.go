@@ -2,6 +2,7 @@ package gcs
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -306,6 +307,11 @@ func (c *ReplicaClient) DeleteWALSegments(ctx context.Context, a []litestream.Po
 	}
 
 	return nil
+}
+
+// DeleteAll deletes everything on the remote path.
+func (c *ReplicaClient) DeleteAll(ctx context.Context) (err error) {
+	return errors.New("DeleteAll stub")
 }
 
 type snapshotIterator struct {

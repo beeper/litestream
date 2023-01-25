@@ -432,7 +432,7 @@ func (c *ReplicaClient) DeleteWALSegments(ctx context.Context, a []litestream.Po
 	return nil
 }
 
-// DeleteAll deletes everything on the remote path. Mainly used for testing.
+// DeleteAll deletes everything on the remote path.
 func (c *ReplicaClient) DeleteAll(ctx context.Context) error {
 	if err := c.Init(ctx); err != nil {
 		return err
