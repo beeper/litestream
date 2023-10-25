@@ -749,7 +749,7 @@ func (db *DB) Sync(ctx context.Context) (err error) {
 	if err != nil {
 		return fmt.Errorf("cannot verify wal state: %w", err)
 	}
-	db.Logger.Debug("sync", "info", &info)
+	db.Logger.Log(ctx, LogLevelTrace, "sync", "info", &info)
 
 	// Track if anything in the shadow WAL changes and then notify at the end.
 	changed := info.walSize != info.shadowWALSize || info.restart || info.reason != ""
@@ -816,7 +816,7 @@ func (db *DB) Sync(ctx context.Context) (err error) {
 		db.notify = make(chan struct{})
 	}
 
-	db.Logger.Debug("sync: ok")
+	db.Logger.Log(ctx, LogLevelTrace, "sync: ok")
 
 	return nil
 }
@@ -1008,7 +1008,7 @@ func (db *DB) initShadowWALFile(filename string) (int64, error) {
 
 func (db *DB) copyToShadowWAL(filename string) (origWalSize int64, newSize int64, err error) {
 	logger := db.Logger.With("filename", filename)
-	logger.Debug("copy-shadow")
+	logger.Log(context.TODO(), LogLevelTrace, "copy-shadow")
 
 	r, err := os.Open(db.WALPath())
 	if err != nil {
@@ -1078,7 +1078,7 @@ func (db *DB) copyToShadowWAL(filename string) (origWalSize int64, newSize int64
 	for {
 		// Read next page from WAL file.
 		if _, err := io.ReadFull(r, frame); err == io.EOF || err == io.ErrUnexpectedEOF {
-			logger.Debug("copy-shadow: break", "offset", offset, "error", err)
+			logger.Log(context.TODO(), LogLevelTrace, "copy-shadow: break", "offset", offset, "error", err)
 			break // end of file or partial page
 		} else if err != nil {
 			return 0, 0, fmt.Errorf("read wal: %w", err)
@@ -1088,7 +1088,7 @@ func (db *DB) copyToShadowWAL(filename string) (origWalSize int64, newSize int64
 		salt0 := binary.BigEndian.Uint32(frame[8:])
 		salt1 := binary.BigEndian.Uint32(frame[12:])
 		if salt0 != hsalt0 || salt1 != hsalt1 {
-			logger.Debug("copy-shadow: break: salt mismatch")
+			logger.Log(context.TODO(), LogLevelTrace, "copy-shadow: break: salt mismatch")
 			break
 		}
 
@@ -1098,7 +1098,7 @@ func (db *DB) copyToShadowWAL(filename string) (origWalSize int64, newSize int64
 		chksum0, chksum1 = Checksum(bo, chksum0, chksum1, frame[:8])  // frame header
 		chksum0, chksum1 = Checksum(bo, chksum0, chksum1, frame[24:]) // frame data
 		if chksum0 != fchksum0 || chksum1 != fchksum1 {
-			logger.Debug("copy shadow: checksum mismatch, skipping", "offset", offset, "check", fmt.Sprintf("(%x,%x) != (%x,%x)", chksum0, chksum1, fchksum0, fchksum1))
+			logger.Log(context.TODO(), LogLevelTrace, "copy shadow: checksum mismatch, skipping", "offset", offset, "check", fmt.Sprintf("(%x,%x) != (%x,%x)", chksum0, chksum1, fchksum0, fchksum1))
 			break
 		}
 
@@ -1107,7 +1107,7 @@ func (db *DB) copyToShadowWAL(filename string) (origWalSize int64, newSize int64
 			return 0, 0, fmt.Errorf("write temp shadow wal: %w", err)
 		}
 
-		logger.Debug("copy-shadow: ok", "offset", offset, "salt", fmt.Sprintf("%x %x", salt0, salt1))
+		logger.Log(context.TODO(), LogLevelTrace, "copy-shadow: ok", "offset", offset, "salt", fmt.Sprintf("%x %x", salt0, salt1))
 		offset += int64(len(frame))
 
 		// Update new size if written frame was a commit record.

@@ -259,6 +259,8 @@ func ReadConfigFile(filename string, expandEnv bool) (_ Config, err error) {
 	}
 
 	switch strings.ToUpper(config.Logging.Level) {
+	case "TRACE":
+		logOptions.Level = litestream.LogLevelTrace
 	case "DEBUG":
 		logOptions.Level = slog.LevelDebug
 	case "WARN", "WARNING":

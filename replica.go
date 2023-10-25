@@ -170,7 +170,7 @@ func (r *Replica) Sync(ctx context.Context) (err error) {
 	}
 	generation := dpos.Generation
 
-	r.Logger().Debug("replica sync", "position", dpos.String())
+	r.Logger().Log(ctx, LogLevelTrace, "replica sync", "position", dpos.String())
 
 	// Create a new snapshot and update the current replica position if
 	// the generation on the database has changed.
@@ -192,7 +192,7 @@ func (r *Replica) Sync(ctx context.Context) (err error) {
 			return fmt.Errorf("cannot determine replica position: %s", err)
 		}
 
-		r.Logger().Debug("replica sync: calc new pos", "position", pos.String())
+		r.Logger().Log(ctx, LogLevelTrace, "replica sync: calc new pos", "position", pos.String())
 		r.mu.Lock()
 		r.pos = pos
 		r.mu.Unlock()

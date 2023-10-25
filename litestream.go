@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"os"
 	"path"
 	"path/filepath"
@@ -45,11 +46,8 @@ var (
 )
 
 var (
-	// LogWriter is the destination writer for all logging.
-	LogWriter = os.Stdout
-
-	// LogFlags are the flags passed to log.New().
-	LogFlags = 0
+	// Custom slog logging level
+	LogLevelTrace slog.Level = slog.LevelDebug - 1
 )
 
 func init() {
