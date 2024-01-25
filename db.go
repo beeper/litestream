@@ -1301,7 +1301,10 @@ func (db *DB) Checkpoint(ctx context.Context, mode string) (err error) {
 	generation, err := db.CurrentGeneration()
 	if err != nil {
 		return fmt.Errorf("cannot determine generation: %w", err)
+	} else if generation == "" {
+		return fmt.Errorf("no current generation")
 	}
+
 	return db.checkpoint(ctx, generation, mode)
 }
 
