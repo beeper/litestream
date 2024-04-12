@@ -1233,12 +1233,14 @@ func (r *Replica) Restore(ctx context.Context, opt RestoreOptions) (err error) {
 	}
 
 	// Apply WAL files in order as they are ready.
+applyFor:
 	for index := minWALIndex; index <= maxWALIndex; index++ {
 		// Wait until next WAL file is ready to apply.
 		mu.Lock()
 		for !walStates[index-minWALIndex].ready {
 			if err := ctx.Err(); err != nil {
-				return err
+				mu.Unlock()
+				break applyFor
 			}
 			cond.Wait()
 		}
