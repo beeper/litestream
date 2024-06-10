@@ -719,7 +719,7 @@ func (r *Replica) monitor(ctx context.Context) {
 // retainer runs in a separate goroutine and handles retention.
 func (r *Replica) retainer(ctx context.Context) {
 	// Disable retention enforcement if retention period is non-positive.
-	if r.Retention <= 0 {
+	if r.RetentionCheckInterval <= 0 {
 		return
 	}
 
