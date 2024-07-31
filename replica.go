@@ -181,9 +181,15 @@ func (r *Replica) Sync(ctx context.Context) (err error) {
 
 	r.Logger().Log(ctx, LogLevelTrace, "replica sync", "position", dpos.String())
 
-	// Create a new snapshot and update the current replica position if
-	// the generation on the database has changed.
-	if r.Pos().Generation != generation {
+	// Prevent initial snapshot if both WAL sync and automatic snapshots are disabled.
+	if r.SyncInterval == 0 && r.SnapshotInterval == 0 {
+		r.mu.Lock()
+		r.pos = dpos
+		r.mu.Unlock()
+	} else if r.Pos().Generation != generation {
+		// Create a new snapshot and update the current replica position if
+		// the generation on the database has changed.
+
 		// Create snapshot if no snapshots exist for generation.
 		snapshotN, err := r.snapshotN(ctx, generation)
 		if err != nil {
@@ -227,6 +233,18 @@ func (r *Replica) syncWAL(ctx context.Context) (err error) {
 		return fmt.Errorf("replica wal reader: %w", err)
 	}
 	defer rd.Close()
+
+	// If WAL sync is disabled, just advance our position.
+	if r.SyncInterval == 0 {
+		if _, err = io.Copy(io.Discard, rd); err != nil {
+			return err
+		}
+
+		r.mu.Lock()
+		r.pos = rd.Pos()
+		r.mu.Unlock()
+		return nil
+	}
 
 	// Copy shadow WAL to client write via io.Pipe().
 	pr, pw := io.Pipe()
@@ -680,7 +698,12 @@ func (r *Replica) deleteWALSegmentsBeforeIndex(ctx context.Context, generation s
 
 // monitor runs in a separate goroutine and continuously replicates the DB.
 func (r *Replica) monitor(ctx context.Context) {
-	ticker := time.NewTicker(r.SyncInterval)
+	monitorInterval := r.SyncInterval
+	if monitorInterval == 0 {
+		monitorInterval = 10 * time.Second
+	}
+
+	ticker := time.NewTicker(monitorInterval)
 	defer ticker.Stop()
 
 	// Continuously check for new data to replicate.
