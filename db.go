@@ -103,6 +103,9 @@ type DB struct {
 	// Frequency at which to perform db sync.
 	MonitorInterval time.Duration
 
+	// Initial delay before monitoring loop starts
+	InitialMonitorDelay time.Duration
+
 	// List of replicas for the database.
 	// Must be set before calling Open().
 	Replicas []*Replica
@@ -1439,6 +1442,12 @@ func (db *DB) execCheckpoint(mode string) (err error) {
 
 // monitor runs in a separate goroutine and monitors the database & WAL.
 func (db *DB) monitor() {
+	select {
+	case <-db.ctx.Done():
+		return
+	case <-time.After(db.InitialMonitorDelay):
+	}
+
 	ticker := time.NewTicker(db.MonitorInterval)
 	defer ticker.Stop()
 
