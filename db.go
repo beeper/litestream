@@ -327,22 +327,22 @@ func (db *DB) Open() (err error) {
 
 // Close flushes outstanding WAL writes to replicas, releases the read lock,
 // and closes the database. Takes a context for final sync.
-func (db *DB) Close(ctx context.Context) (err error) {
+func (db *DB) Close(ctx context.Context) error {
 	db.cancel()
 	db.wg.Wait()
 
 	// Perform a final db sync, if initialized.
 	if db.db != nil {
-		if e := db.Sync(ctx); e != nil && err == nil {
-			err = e
+		if err := db.Sync(ctx); err != nil {
+			return err
 		}
 	}
 
 	// Ensure replicas perform a final sync and stop replicating.
 	for _, r := range db.Replicas {
 		if db.db != nil {
-			if e := r.Sync(ctx); e != nil && err == nil {
-				err = e
+			if err := r.Sync(ctx); err != nil {
+				return err
 			}
 		}
 		r.Stop(true)
@@ -350,24 +350,24 @@ func (db *DB) Close(ctx context.Context) (err error) {
 
 	// Release the read lock to allow other applications to handle checkpointing.
 	if db.rtx != nil {
-		if e := db.releaseReadLock(); e != nil && err == nil {
-			err = e
+		if err := db.releaseReadLock(); err != nil {
+			return err
 		}
 	}
 
 	if db.db != nil {
-		if e := db.db.Close(); e != nil && err == nil {
-			err = e
+		if err := db.db.Close(); err != nil {
+			return err
 		}
 	}
 
 	if db.f != nil {
-		if e := db.f.Close(); e != nil && err == nil {
-			err = e
+		if err := db.f.Close(); err != nil {
+			return err
 		}
 	}
 
-	return err
+	return nil
 }
 
 // UpdatedAt returns the last modified time of the database or WAL file.
