@@ -370,6 +370,39 @@ func (db *DB) Close(ctx context.Context) error {
 	return nil
 }
 
+// Fast close variant for liteserv process restarts, no need to copy shadow wal
+// in these cases since we'll pick it up on restart.
+func (db *DB) CloseForRestart(ctx context.Context) error {
+	db.cancel()
+	db.wg.Wait()
+
+	// Stop any replicas
+	for _, r := range db.Replicas {
+		r.Stop(true)
+	}
+
+	// Release the read lock to allow other applications to handle checkpointing.
+	if db.rtx != nil {
+		if err := db.releaseReadLock(); err != nil {
+			return err
+		}
+	}
+
+	if db.db != nil {
+		if err := db.db.Close(); err != nil {
+			return err
+		}
+	}
+
+	if db.f != nil {
+		if err := db.f.Close(); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 // UpdatedAt returns the last modified time of the database or WAL file.
 func (db *DB) UpdatedAt() (time.Time, error) {
 	// Determine database modified time.
