@@ -591,6 +591,50 @@ func TestDB_Sync(t *testing.T) {
 	})
 }
 
+// Ensure a checkpoint on close will succeed.
+func TestDB_CheckpointOnClose(t *testing.T) {
+	db, sqldb := MustOpenDBs(t)
+	defer db.Close(context.Background())
+	defer MustCloseSQLDB(t, sqldb)
+
+	// Force checkpoint after every write.
+	db.MinCheckpointPageN = 1
+
+	// Execute a query to force a write to the WAL and then sync.
+	if _, err := sqldb.Exec(`CREATE TABLE foo (bar TEXT);`); err != nil {
+		t.Fatal(err)
+	} else if err := db.Sync(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+
+	// Get generation to test later it didn't change.
+	firstGeneration, err := db.CurrentGeneration()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Write again and sync.
+	if _, err := sqldb.Exec(`INSERT INTO foo (bar) VALUES ('baz');`); err != nil {
+		t.Fatal(err)
+	} else if err := db.Sync(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+
+	// Write to WAL & close.
+	if _, err := sqldb.Exec(`INSERT INTO foo (bar) VALUES ('baz');`); err != nil {
+		t.Fatal(err)
+	} else if err := db.Close(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+
+	finalGeneration, err := db.CurrentGeneration()
+	if err != nil {
+		t.Fatal(err)
+	} else if finalGeneration != firstGeneration {
+		t.Fatal("generation changed", firstGeneration, "!=", finalGeneration)
+	}
+}
+
 // MustOpenDBs returns a new instance of a DB & associated SQL DB.
 func MustOpenDBs(tb testing.TB) (*litestream.DB, *sql.DB) {
 	tb.Helper()
